@@ -34,6 +34,4 @@ object Transformer {
 
 final case class RecordName(namespace: String, name: String)
 
-final case class SchemaDoesNotHaveField(field: String, schema: Schema) extends Throwable(s"Schema does not have field: '$field' ($schema)")
-
 final case class AvroEncodeResult(usedSchema: Schema, payload: Array[Byte])

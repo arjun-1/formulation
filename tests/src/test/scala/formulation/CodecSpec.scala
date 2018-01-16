@@ -89,6 +89,17 @@ class CodecSpec extends WordSpec with Matchers with GeneratorDrivenPropertyCheck
         assert(a, Fault.codec)
       }
     }
+    "work with Option with list" in {
+      forAll { (a: Option[List[String]]) =>
+        assert(a, option(list(string)))
+      }
+    }
+
+    "work with Option with record" in {
+      forAll { (a: Option[UserV1]) =>
+        assert(a, option(UserV1.codec))
+      }
+    }
   }
 
   def assert[A](entity: A, avroPart: Avro[A]): Boolean = {
@@ -96,10 +107,12 @@ class CodecSpec extends WordSpec with Matchers with GeneratorDrivenPropertyCheck
     implicit def codec: Avro[Generic[A]] = Generic.codec(avroPart)
 
     val record = Generic(entity)
+    val bytes = encode(record)
 
-    val result = decode[Generic[A]](encode(record))
-    val expected = Right(record)
-
-    result == expected
+    decode[Generic[A]](bytes) match {
+      case Right(v) => v == entity
+      case Left(err) => err.printStackTrace()
+        false
+    }
   }
 }

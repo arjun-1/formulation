@@ -75,7 +75,7 @@ object AvroEncoder {
       AvroEncoder.create((schema, v) => fa.encode(schema, g(v)))
 
     override def option[A](from: AvroEncoder[A]): AvroEncoder[Option[A]] = AvroEncoder.create {
-      case (schema, Some(value)) => from.encode(schema, value)
+      case (schema, Some(value)) => from.encode(schema.getTypes.asScala.find(_.getType != Schema.Type.NULL).orNull, value)
       case (schema, None) => schema -> null
     }
 
@@ -98,8 +98,8 @@ object AvroEncoder {
       AvroEncoder.create { case (schema, value) =>
 
         def encode[Z](encoder: AvroEncoder[Z], value: Z) = encoder.name match {
-          case Some(fqdn) =>
-            val idx = schema.getIndexNamed(s"${fqdn.namespace}.${fqdn.name}")
+          case Some(n) =>
+            val idx = schema.getIndexNamed(s"${n.namespace}.${n.name}")
             val types = schema.getTypes.asScala
 
             encoder.encode(types(idx), value)

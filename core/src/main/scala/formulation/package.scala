@@ -1,6 +1,6 @@
 import java.io.{ByteArrayInputStream, ByteArrayOutputStream}
 
-import org.apache.avro.Schema
+import org.apache.avro.{AvroRuntimeException, Schema}
 import org.apache.avro.generic.{GenericDatumReader, GenericDatumWriter, GenericRecord}
 import org.apache.avro.io.{DecoderFactory, EncoderFactory}
 

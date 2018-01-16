@@ -172,16 +172,13 @@ object Boilerplate {
         |import cats.implicits._
         |
         |trait AvroDecoderRecordN { self: AvroAlgebra[AvroDecoder] =>
-        |  private def record[A](namespace: String, name: String)(f: (Schema, GenericRecord) => Either[Throwable, A]) =
-        |   AvroDecoder.partialWithSchema { case (s, record: GenericRecord) if s.getType == Schema.Type.RECORD && record.getSchema.getFullName == namespace + "." + name => f(s, record) }
+        |  private def getSchemaForField(path: JSONPath, schema: Schema, field: String): Validated[List[AvroDecodeError], Schema] =
+        |    Validated.fromOption(Option(schema.getField(field)).map(_.schema()), AvroDecodeError.SchemaDoesNotHaveField(path, field, schema) :: Nil)
         |
-        |  private def getSchemaForField(schema: Schema, field: String): Either[Throwable, Schema] =
-        |    Either.fromOption(Option(schema.getField(field)).map(_.schema()), SchemaDoesNotHaveField(field, schema))
+        |  private def decodeField[A](path: JSONPath, schema: Schema, record: GenericRecord, field: String, decoder: AvroDecoder[A]): Validated[List[AvroDecodeError], A] =
+        |    getSchemaForField(path, schema, field).andThen(s => decoder.decode(path.member(field), s, record.get(field)))
         |
-        |  private def decodeField[A](schema: Schema, record: GenericRecord, field: String, decoder: AvroDecoder[A]): Either[Throwable, A] =
-        |    getSchemaForField(schema, field).flatMap(s => decoder.decode(s, record.get(field)))
-        |
-        -  def record$arity[${`A..N`}, Z](namespace: String, name: String)(f: (${`A..N`}) => Z)($params): AvroDecoder[Z] = record(namespace, name) { case (s,r) => for { $applies } yield f(${`a..n`}) }
+        -  def record$arity[${`A..N`}, Z](namespace: String, name: String)(f: (${`A..N`}) => Z)($params): AvroDecoder[Z] = record(namespace, name) { case (p,s,r) => for { $applies } yield f(${`a..n`}) }
         |}
         |
       """
