@@ -109,10 +109,6 @@ class CodecSpec extends WordSpec with Matchers with GeneratorDrivenPropertyCheck
     val record = Generic(entity)
     val bytes = encode(record)
 
-    decode[Generic[A]](bytes) match {
-      case Right(v) => v == entity
-      case Left(err) => err.printStackTrace()
-        false
-    }
+    decode[Generic[A]](bytes) == Right(entity)
   }
 }

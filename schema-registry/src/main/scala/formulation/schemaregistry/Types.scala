@@ -4,7 +4,7 @@ import java.nio.ByteBuffer
 
 import cats._
 import cats.implicits._
-import formulation.{Avro, AvroDecoder, AvroEncodeResult, AvroEncoder, AvroSchema, AvroSchemaCompatibility}
+import formulation.{Avro, AvroDecodeError, AvroDecoder, AvroEncodeResult, AvroEncoder, AvroSchema, AvroSchemaCompatibility}
 import org.apache.avro.Schema
 
 import scala.collection.JavaConverters._
@@ -48,7 +48,7 @@ final class SchemaRegistry[F[_]] private(client: SchemaRegistryClient[F])(implic
     * @tparam A The entity we want to decode to
     * @return Attempt[A], which might be a error or a success case
     */
-  def decode[A: AvroSchema : AvroDecoder](bytes: Array[Byte]): F[Either[Throwable, A]] = {
+  def decode[A: AvroSchema : AvroDecoder](bytes: Array[Byte]): F[Either[List[AvroDecodeError], A]] = {
     val bb = ByteBuffer.wrap(bytes)
 
     for {

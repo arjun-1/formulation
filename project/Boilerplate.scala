@@ -161,7 +161,9 @@ object Boilerplate {
       import tv._
 
       val params = synTypes map { tpe => s"param$tpe: (String, Member[AvroDecoder, $tpe, Z])"} mkString ", "
-      val applies = synTypes map { tpe => s"${tpe.toLowerCase} <- decodeField(s, r, param$tpe._1, param$tpe._2.typeClass)"} mkString "; "
+      val applies = synTypes map { tpe => s"decodeField(p, s, r, param$tpe._1, param$tpe._2.typeClass)"} mkString ", "
+
+      def mapper = if(arity == 1) s"($applies).map(f)" else s"Semigroupal.map$arity[Validated[List[AvroDecodeError], ?], ${`A..N`}, Z]($applies)(f)"
 
       block"""
         |package formulation
@@ -169,6 +171,8 @@ object Boilerplate {
         |import org.apache.avro.generic.GenericRecord
         |import org.apache.avro.Schema
         |
+        |import cats.data.Validated
+        |import cats.Semigroupal
         |import cats.implicits._
         |
         |trait AvroDecoderRecordN { self: AvroAlgebra[AvroDecoder] =>
@@ -178,7 +182,7 @@ object Boilerplate {
         |  private def decodeField[A](path: JSONPath, schema: Schema, record: GenericRecord, field: String, decoder: AvroDecoder[A]): Validated[List[AvroDecodeError], A] =
         |    getSchemaForField(path, schema, field).andThen(s => decoder.decode(path.member(field), s, record.get(field)))
         |
-        -  def record$arity[${`A..N`}, Z](namespace: String, name: String)(f: (${`A..N`}) => Z)($params): AvroDecoder[Z] = record(namespace, name) { case (p,s,r) => for { $applies } yield f(${`a..n`}) }
+        -  def record$arity[${`A..N`}, Z](namespace: String, name: String)(f: (${`A..N`}) => Z)($params): AvroDecoder[Z] = AvroDecoder.record(namespace, name) { case (p,s,r) => $mapper }
         |}
         |
       """

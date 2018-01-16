@@ -1,6 +1,6 @@
 import java.io.{ByteArrayInputStream, ByteArrayOutputStream}
 
-import org.apache.avro.{AvroRuntimeException, Schema}
+import org.apache.avro.Schema
 import org.apache.avro.generic.{GenericDatumReader, GenericDatumWriter, GenericRecord}
 import org.apache.avro.io.{DecoderFactory, EncoderFactory}
 
@@ -75,7 +75,7 @@ package object formulation extends AvroDsl {
     * @return Either a error or the decode value.
     */
   def decode[A](bytes: Array[Byte], writerSchema: Option[Schema] = None, readerSchema: Option[Schema] = None)
-               (implicit R: AvroDecoder[A], S: AvroSchema[A]): Either[Throwable, A] = {
+               (implicit R: AvroDecoder[A], S: AvroSchema[A]): Either[List[AvroDecodeError], A] = {
 
     val in = new ByteArrayInputStream(bytes)
 
@@ -87,10 +87,10 @@ package object formulation extends AvroDsl {
       val binDecoder = DecoderFactory.get().directBinaryDecoder(in, null)
       val record = datumReader.read(null, binDecoder)
 
-      R.decode(rSchema, record)
+      R.decode(JSONPath(), rSchema, record).toEither
     }
     catch {
-      case NonFatal(ex) => Left(ex)
+      case NonFatal(ex) => Left(AvroDecodeError.Exception(JSONPath(), ex) :: Nil)
     }
     finally {
       in.close()

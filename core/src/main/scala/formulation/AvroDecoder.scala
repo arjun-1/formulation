@@ -81,10 +81,10 @@ object AvroDecoder {
   def record[A](namespace: String, name: String)(f: (JSONPath, Schema, GenericRecord) => Validated[List[AvroDecodeError], A]): AvroDecoder[A] = new AvroDecoder[A] {
     override def decode(path: JSONPath, schema: Schema, data: Any): Validated[List[AvroDecodeError], A] = data match {
       case record: GenericRecord =>
-        if(schema.getType == Schema.Type.RECORD && record.getSchema.getFullName == namespace + "." + name) {
+        if(record.getSchema.getFullName == namespace + "." + name) {
           f(path, schema, record)
         } else {
-          Validated.invalid(List(AvroDecodeError.NameMismatch(path, namespace + "." + name, record.getSchema.getFullName)))
+          Validated.invalid(List(AvroDecodeError.NameMismatch(path, expected = namespace + "." + name, actual = record.getSchema.getFullName)))
         }
       case _ =>
         Validated.invalid(List(AvroDecodeError.TypeMismatch(path, data, schema)))
@@ -115,7 +115,7 @@ object AvroDecoder {
       val decimalType = LogicalTypes.decimal(precision, scale)
       val decimalConversion = new Conversions.DecimalConversion
 
-      Validated.fromTry(Try(decimalConversion.fromBytes(v, null, decimalType))).map(x => new BigDecimal(x)).leftMap(ex => AvroDecodeError.Exception(path, ex) :: Nil)
+      Validated.fromTry(Try(decimalConversion.fromBytes(v, null, decimalType))).map(x => BigDecimal(x)).leftMap(ex => AvroDecodeError.Exception(path, ex) :: Nil)
     }
 
     override def imap[A, B](fa: AvroDecoder[A])(f: A => B)(g: B => A): AvroDecoder[B] = new AvroDecoder[B] {
@@ -179,7 +179,7 @@ object AvroDecoder {
         }
 
         schema.getType match {
-          case Schema.Type.UNION => loopValidated(schema.getTypes.asScala.toList)
+          case Schema.Type.UNION => loopValidated(schema.getTypes.asScala.toList).leftMap(errs => AvroDecodeError.Union(path, errs) :: Nil)
           case _ => fa.decode(path, schema, data).map(Left.apply) findValid fb.decode(path, schema, data).map(Right.apply)
         }
       }

@@ -27,7 +27,7 @@ class RefinedSpec extends WordSpec with Matchers with EitherValues {
       val entity = PersonUnrefined("Mark", -1)
       val bytes = encode(entity)
 
-      decode[PersonRefined](bytes).left.value.getMessage shouldBe "Predicate failed: (-1 > 0)."
+      decode[PersonRefined](bytes).left shouldBe "Predicate failed: (-1 > 0)."
     }
   }
 }
