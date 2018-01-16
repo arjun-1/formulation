@@ -9,7 +9,7 @@ _formulation_ is a EDSL (embedded domain specific language) for describing Avro 
 
 Why use Avro?
 
-- Space and network efficience thanks to a reduced payload.
+- Space and network efficiency thanks to a reduced payload.
 - Schema evolution intelligence and compatibility enforcing by using a schema registry (which also forces you to centralise schema storage).
 
 Why use Formulation?

@@ -1,5 +1,7 @@
+import microsites.ExtraMdFileConfig
+
 val core = project.in(file("core"))
-  .settings(commonSettings("core"))
+  .settings(commonSettings("-core"))
   .settings(
     libraryDependencies ++= Seq(
       "org.typelevel" %% "cats-core" % "1.0.1",
@@ -11,7 +13,7 @@ val core = project.in(file("core"))
   )
 
 val refined = project.in(file("refined"))
-  .settings(commonSettings("refined"))
+  .settings(commonSettings("-refined"))
   .settings(
     libraryDependencies ++= Seq(
       "eu.timepit" %% "refined" % "0.8.6"
@@ -20,7 +22,7 @@ val refined = project.in(file("refined"))
   .dependsOn(core)
 
 val schemaRegistry = project.in(file("schema-registry"))
-  .settings(commonSettings("schema-registry"))
+  .settings(commonSettings("-schema-registry"))
   .dependsOn(core)
 
 val schemaRegistryConfluentSttp = project.in(file("schema-registry-confluent-sttp"))
@@ -35,7 +37,7 @@ val schemaRegistryConfluentSttp = project.in(file("schema-registry-confluent-stt
 
 val tests = project.in(file("tests"))
   .settings(noPublishSettings)
-  .settings(commonSettings("tests"))
+  .settings(commonSettings("-tests"))
   .settings(
     libraryDependencies ++= Seq(
       "org.scalacheck" %% "scalacheck" % "1.13.5" % Test,
@@ -47,7 +49,7 @@ val tests = project.in(file("tests"))
 
 val benchmark = project.in(file("benchmark"))
   .settings(noPublishSettings)
-  .settings(commonSettings("benchmark"))
+  .settings(commonSettings("-benchmark"))
   .settings(
     coverageExcludedPackages := "formulation.*",
     libraryDependencies ++= Seq(
@@ -60,6 +62,30 @@ val benchmark = project.in(file("benchmark"))
   .dependsOn(core)
   .enablePlugins(JmhPlugin)
 
+val docs = project.in(file("docs"))
+  .settings(commonSettings(""))
+  .settings(
+    commonSettings(""),
+    micrositeDocumentationUrl := "docs",
+    micrositeGithubOwner := "vectos",
+    micrositeGithubRepo := "formulation",
+    micrositeTwitterCreator := "@mark_dj",
+    micrositeExtraMdFiles := Map(
+      file("ISSUE_TEMPLATE.md") -> ExtraMdFileConfig(
+        "issues.md",
+        "home",
+        Map("title" -> "Issues", "section" -> "issues", "position" -> "50")
+      ),
+      file("README.md") -> ExtraMdFileConfig(
+        "index.md",
+        "home",
+        Map("title" -> "Home", "section" -> "home", "position" -> "0")
+      )
+    )
+  )
+  .enablePlugins(MicrositesPlugin)
+
+
 lazy val noPublishSettings = Seq(
   publish := {},
   publishLocal := {},
@@ -67,7 +93,7 @@ lazy val noPublishSettings = Seq(
 )
 
 def commonSettings(n: String) = Seq(
-  name := s"formulation-$n",
+  name := s"formulation$n",
   version := "0.4",
   organization := "net.vectos",
   crossScalaVersions := Seq("2.11.12", "2.12.4"),
@@ -145,4 +171,4 @@ val scalacOptions212 = Seq(
 
 val root = project.in(file("."))
   .settings(commonSettings("core") ++ noPublishSettings)
-  .aggregate(core, refined, schemaRegistry, schemaRegistryConfluentSttp)
+  .aggregate(core, refined, schemaRegistry, schemaRegistryConfluentSttp, docs)
